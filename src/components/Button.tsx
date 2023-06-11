@@ -18,9 +18,7 @@ const Button = ({ small = false, gray = false, className = "", ...props }) => {
     <button
       className={`disabled:opacity:50 rounded-full text-white transition-colors duration-200 disabled:cursor-not-allowed ${sizeClasses} ${colorClasses} ${className}`}
       {...props}
-    >
-      Share
-    </button>
+    ></button>
   );
 };
 
