@@ -22,6 +22,22 @@ const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
     { userId: id },
     { getNextPageParam: (lastPage) => lastPage.nextCursor }
   );
+  const trpcUtils = api.useContext();
+
+  const toggleFollow = api.profile.toggleFollow.useMutation({
+    onSuccess: ({ addedFollow }) => {
+      trpcUtils.profile.getById.setData({ id }, (oldData) => {
+        if (oldData == null) return;
+
+        const countModifier = addedFollow ? 1 : -1;
+        return {
+          ...oldData,
+          isFollowing: addedFollow,
+          followerCount: oldData.followersCount + countModifier,
+        };
+      });
+    },
+  });
 
   if (profile == null || profile.name == null)
     return <ErrorPage statusCode={404} />;
@@ -46,17 +62,18 @@ const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
             {profile.tweetsCount}
             {getPlural(profile.tweetsCount, "tweet", "tweets")}
             {"  "}
-            {profile.tweetsCount}
+            {profile.followsCount}
             {getPlural(profile.followersCount, "follower", "followers")}
             {"  "}
-            {profile.tweetsCount}following
+            {profile.followersCount}following
           </div>
         </div>
         <FollowButton
-          userId={profile.userId}
+          userId={id}
           isFollowing={profile.isFollowing}
+          isLoading={toggleFollow.isLoading}
           onClick={() => {
-            null;
+            toggleFollow.mutate({ userId: id });
           }}
         />
       </header>
@@ -75,10 +92,12 @@ const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
 function FollowButton({
   userId,
   isFollowing,
+  isLoading,
   onClick,
 }: {
   userId: string;
   isFollowing: boolean;
+  isLoading: boolean;
   onClick: () => void;
 }) {
   const session = useSession();
@@ -86,7 +105,7 @@ function FollowButton({
     return null;
 
   return (
-    <Button onClick={onClick} small gray={isFollowing}>
+    <Button disabled={isLoading} onClick={onClick} small gray={isFollowing}>
       {isFollowing ? "Unfollow" : "Follow"}
     </Button>
   );
